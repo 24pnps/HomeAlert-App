@@ -1,0 +1,4 @@
+#Wed Feb 14 09:57:56 ICT 2024
+base.0=/Users/aekchanin/Documents/homealert_app/build/app/intermediates/dex/profile/mergeDexProfile/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex

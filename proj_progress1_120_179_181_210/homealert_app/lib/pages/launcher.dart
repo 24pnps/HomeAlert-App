@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'profile.dart';
 import 'notification.dart';
 import 'task.dart';
+import 'home.dart';
+import 'setting.dart';
 import '../util/device_box.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -42,19 +44,17 @@ void initState() {
   super.initState();
   _pages = [
     ProfilePage(email: widget.email),
-    Container(), // Placeholder for NotificationDemo
-    Container(
-      color: Colors.green,
-    ),
+    NotificationDemo(username: ""), // Placeholder for NotificationDemo
+    HomePage(username: ""),
     TaskPage(),
-    Container(
-      color: Colors.yellow,
-    ),
+    SettingsPage(username: ""),
   ];
 
   _fetchUserData().then((_) {
     // After fetching user data, update NotificationDemo with username
     _pages[1] = NotificationDemo(username: _username);
+    _pages[2] = HomePage(username: _username);
+    _pages[3] = SettingsPage(username: _username);
     setState(() {}); // Update state to reflect changes
   });
 }
@@ -63,6 +63,7 @@ void initState() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:  Color(0xFFF8FAED),
       body: _pages[_selectedIndex],
       bottomNavigationBar: _bottomNavbar(context),
     );
@@ -82,6 +83,7 @@ void initState() {
               ),
             ),
           ),
+          
           // Bottom navigation bar
           ClipRRect(
             borderRadius: BorderRadius.circular(30),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:homealert_app/pages/home.dart';
 import 'pages/login.dart';
 import 'pages/profile.dart';
 import 'pages/add_new_device.dart';
 import 'pages/notification_add.dart';
+import 'pages/home.dart';
+import 'pages/setting.dart';
 import 'pages/notification_edit.dart';
 import 'pages/notification.dart';
 import 'pages/register.dart';
@@ -35,7 +38,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => Login(),
         '/login': (context) => Login(),
- 
+        '/home': (context) => HomePage(username: ""),
+        '/setting' : (context) => SettingsPage(username: ""),
         '/add_new_device': (context) => AddNewDevice(),
         '/notification_add': (context) => AddItemPage(),
         '/notification_edit': (context) => NotificationEdit(),

@@ -3,7 +3,12 @@ import 'profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SignUp extends StatelessWidget {
+class SignUp extends StatefulWidget {
+  @override
+  _SignUpState createState() => _SignUpState();
+}
+
+class _SignUpState extends State<SignUp> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -12,12 +17,19 @@ class SignUp extends StatelessWidget {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _phonenoController = TextEditingController();
 
-  SignUp();
-  bool _isPasswordVisible = false;
-
+  bool _isPasswordVisible1 = false;
+  bool _isPasswordVisible2 = false;
   // Method to toggle password visibility
-  void _togglePasswordVisibility() {
-    _isPasswordVisible = !_isPasswordVisible;
+  void _togglePasswordVisibility1() {
+    setState(() {
+      _isPasswordVisible1 = !_isPasswordVisible1;
+    });
+  }
+
+  void _togglePasswordVisibility2() {
+    setState(() {
+      _isPasswordVisible2 = !_isPasswordVisible2;
+    });
   }
 
   @override
@@ -99,14 +111,16 @@ class SignUp extends StatelessWidget {
                         ),
                         child: TextFormField(
                           controller: _passwordController,
-                          obscureText: !_isPasswordVisible,
+                          obscureText: !_isPasswordVisible1,
                           decoration: InputDecoration(
                             prefixIcon: Icon(Icons.lock),
                             hintText: 'Password',
                             border: InputBorder.none,
                             suffixIcon: GestureDetector(
-                              onTap: _togglePasswordVisibility,
-                              child: Icon(_isPasswordVisible
+                              onTap: () {
+                                _togglePasswordVisibility1();
+                              },
+                              child: Icon(_isPasswordVisible1
                                   ? Icons.visibility
                                   : Icons.visibility_off),
                             ),
@@ -139,15 +153,15 @@ class SignUp extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextFormField(
-                              controller: _passwordController,
-                              obscureText: !_isPasswordVisible,
+                              controller: _confirmPasswordController,
+                              obscureText: !_isPasswordVisible2,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.lock),
                                 hintText: 'Confirm Password',
                                 border: InputBorder.none,
                                 suffixIcon: GestureDetector(
-                                  onTap: _togglePasswordVisibility,
-                                  child: Icon(_isPasswordVisible
+                                  onTap: _togglePasswordVisibility2,
+                                  child: Icon(_isPasswordVisible2
                                       ? Icons.visibility
                                       : Icons.visibility_off),
                                 ),
@@ -158,6 +172,9 @@ class SignUp extends StatelessWidget {
                                 }
                                 if (value.length < 8) {
                                   return 'Password must be at least 8 characters';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match';
                                 }
                                 return null;
                               },
@@ -398,6 +415,27 @@ class SignUp extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class PasswordVisibilityToggle extends StatelessWidget {
+  final bool isPasswordVisible;
+  final VoidCallback onTap;
+
+  const PasswordVisibilityToggle({
+    Key? key,
+    required this.isPasswordVisible,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Icon(
+        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
       ),
     );
   }

@@ -54,7 +54,7 @@ void initState() {
     // After fetching user data, update NotificationDemo with username
     _pages[1] = NotificationDemo(username: _username);
     _pages[2] = HomePage(username: _username);
-    _pages[3] = SettingsPage(username: _username);
+    //_pages[3] = SettingsPage(username: _username);
     setState(() {}); // Update state to reflect changes
   });
 }

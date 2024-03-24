@@ -15,7 +15,9 @@ class _LoginState extends State<Login> {
 
   // Method to toggle password visibility
   void _togglePasswordVisibility() {
-    _isPasswordVisible = !_isPasswordVisible;
+    setState(() {
+      _isPasswordVisible = !_isPasswordVisible;
+    });
   }
 
   // Function to handle user login
@@ -65,122 +67,124 @@ class _LoginState extends State<Login> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Center(
-        child: Container(
-          width: 350, // Adjust the width as needed
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Let's sign you in.",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 40),
-              ),
-              Text("Welcome back.", style: TextStyle(fontSize: 30)),
-              Text("You've been missed!", style: TextStyle(fontSize: 30)),
-              SizedBox(height: 50),
-              Container(
-                height: 50,
-                child: Opacity(
-                  opacity: 0.3,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.mail),
-                        hintText: 'Email',
-                        border: InputBorder.none,
+      body: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            width: 350, // Adjust the width as needed
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Let's sign you in.",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 40),
+                ),
+                Text("Welcome back.", style: TextStyle(fontSize: 30)),
+                Text("You've been missed!", style: TextStyle(fontSize: 30)),
+                SizedBox(height: 50),
+                Container(
+                  height: 50,
+                  child: Opacity(
+                    opacity: 0.3,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.mail),
+                          hintText: 'Email',
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 10),
-              Container(
-                height: 50,
-                child: Opacity(
-                  opacity: 0.3,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextFormField(
-                      controller: passwordController,
-                      obscureText: !_isPasswordVisible,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.lock),
-                        hintText: 'Password',
-                        border: InputBorder.none,
-                        suffixIcon: GestureDetector(
-                          onTap: _togglePasswordVisibility,
-                          child: Icon(_isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off),
-                        ),
+                SizedBox(height: 10),
+                Container(
+                  height: 50,
+                  child: Opacity(
+                    opacity: 0.3,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
-                        }
-                        if (value.length < 8) {
-                          return 'Password must be at least 8 characters';
-                        }
-                        return null;
+                      child: TextFormField(
+                        controller: passwordController,
+                        obscureText: !_isPasswordVisible,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.lock),
+                          hintText: 'Password',
+                          border: InputBorder.none,
+                          suffixIcon: GestureDetector(
+                            onTap: _togglePasswordVisibility,
+                            child: Icon(_isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          if (value.length < 8) {
+                            return 'Password must be at least 8 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 200),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account?",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SignUp(),
+                          ),
+                        );
                       },
+                      child: Text(
+                        "Register",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-              SizedBox(height: 200),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Don't have an account?",
-                    style: TextStyle(color: Colors.grey),
+                SizedBox(height: 20),
+                Container(
+                  height: 50,
+                  width: 350,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  SizedBox(width: 5),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SignUp(),
-                        ),
-                      );
-                    },
+                  child: TextButton(
+                    onPressed: _login,
                     child: Text(
-                      "Register",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      'Sign in',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: 20),
-              Container(
-                height: 50,
-                width: 350,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: TextButton(
-                  onPressed: _login,
-                  child: Text(
-                    'Sign Up',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

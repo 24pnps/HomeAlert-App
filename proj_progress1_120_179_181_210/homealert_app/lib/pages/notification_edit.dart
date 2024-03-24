@@ -1,17 +1,162 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'notification_add.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'edit_Itemdetails.dart';
 
 class NotificationEdit extends StatefulWidget {
-  // NotificationEdit({Key? key, required this.title}) : super(key: key);
-  //final String title;
-  NotificationEdit({Key? key}) : super(key: key);
+  final String username;
+  final String itemName;
+
+  NotificationEdit({Key? key, required this.username, required this.itemName})
+      : super(key: key);
+
   @override
   _NotificationEditState createState() => _NotificationEditState();
 }
 
 class _NotificationEditState extends State<NotificationEdit> {
+  TextEditingController nameController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+  TimeOfDay? alertTime;
+
+  String itemName = '';
+  String itemDescription = '';
+  String selectedRepeatOption = 'Never';
+  List<String> repeatOptions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch data from Firestore
+    fetchDataFromFirestore();
+  }
+
+  Future<void> fetchDataFromFirestore() async {
+    try {
+      // Query Firestore to get the document with the specified itemName
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('Item')
+              .where('itemName', isEqualTo: widget.itemName)
+              .get();
+
+      // Check if the document exists
+      if (querySnapshot.docs.isNotEmpty) {
+        // Extract data from the document
+        var data = querySnapshot.docs.first.data();
+        itemName = data['itemName'];
+        itemDescription = data['itemDescription'];
+        String alertTimeString = data['alertTime'];
+        repeatOptions = List<String>.from(data['repeatOptions']);
+
+        // Update the state with the fetched data
+        setState(() {
+          nameController.text = itemName;
+          descriptionController.text = itemDescription;
+          if (alertTimeString != null && alertTimeString.isNotEmpty) {
+            var timeParts = alertTimeString.split(':');
+            int hour = int.parse(timeParts[0]);
+            int minute = int.parse(timeParts[1]);
+            alertTime = TimeOfDay(hour: hour, minute: minute);
+          }
+          selectedRepeatOption =
+              repeatOptions.isEmpty ? 'Never' : repeatOptions.join(', ');
+        });
+      } else {
+        print('Document not found');
+      }
+    } catch (error) {
+      print("Error fetching data: $error");
+    }
+  }
+
+  void showRepeatOptionsDialog(BuildContext context) async {
+    List<String> result = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        List<String> selectedOptions = repeatOptions.toList();
+        return AlertDialog(
+          title: Text('Select Repeat Options'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CheckboxListTile(
+                    title: Text('Never'),
+                    value: selectedOptions.isEmpty,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedOptions.clear();
+                      });
+                    },
+                  ),
+                  // Add other repeat options checkboxes here
+                ],
+              );
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(selectedOptions);
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null) {
+      setState(() {
+        repeatOptions = result;
+        selectedRepeatOption =
+            repeatOptions.isEmpty ? 'Never' : repeatOptions.join(', ');
+      });
+    }
+  }
+
+  Future<void> updateItemInFirebase() async {
+    try {
+      // Query Firestore to get the document with the specified itemName
+      QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('Item')
+              .where('itemName', isEqualTo: widget.itemName)
+              .get();
+
+      // Check if the document exists
+      if (querySnapshot.docs.isNotEmpty) {
+        // Extract document ID
+        String docId = querySnapshot.docs.first.id;
+
+        // Update item data
+        await FirebaseFirestore.instance.collection('Item').doc(docId).update({
+          'itemName': nameController.text,
+          'itemDescription': descriptionController.text,
+          'alertTime': alertTime != null
+              ? '${alertTime!.hour.toString().padLeft(2, '0')}:${alertTime!.minute.toString().padLeft(2, '0')}'
+              : null,
+          'repeatOptions': repeatOptions,
+        });
+
+        print('Item updated successfully');
+      } else {
+        print('Document not found');
+      }
+    } catch (error) {
+      print("Error updating item: $error");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,487 +171,181 @@ class _NotificationEditState extends State<NotificationEdit> {
               Text(
                 "",
                 style: GoogleFonts.poppins(
-                  //fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
               ),
               Text(
-                "Remind List",
+                "Edit Item",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.add_circle),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => AddItemPage(),
-                    ),
-                  );
-                },
-                color: const Color.fromARGB(255, 24, 24, 24),
+              Text(
+                "           ",
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                ),
               ),
             ],
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10),
-            child: Container(
-              margin: EdgeInsets.only(
-                  top: 15.0, bottom: 10.0, left: 5.0, right: 5.0),
-              padding: EdgeInsets.only(
-                  top: 15.0, bottom: 10.0, left: 25.0, right: 20.0),
-              height: 150,
-              decoration: BoxDecoration(
-                color: Color(0xFF5F33E1),
-                borderRadius: BorderRadius.circular(25),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 20),
+            // Input field for item name
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18.0),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Your today's task\nalmost done!",
-                            style: TextStyle(
-                              fontSize: 15,
-                              height: 1.2,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
-                                  Color(0xFFDEDBFF)),
-                              shape: MaterialStateProperty.all<
-                                  RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              "View Task",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF5F33E1),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+              color: Color(0xFFFEFAED),
+              child: Padding(
+                padding:
+                    EdgeInsets.only(left: 20.0, top: 3, bottom: 3, right: 20.0),
+                child: TextFormField(
+                  controller: nameController,
+                  onChanged: (value) {
+                    setState(() {
+                      itemName = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Item\'s name',
+                    hintText: ' ',
+                    border: InputBorder.none,
                   ),
-                  Expanded(
-                    flex: 1,
-                    child: Center(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 77,
-                            height: 77,
-                            child: CircularProgressIndicator(
-                              value: 0.85,
-                              strokeWidth: 10,
-                              backgroundColor: Colors.white,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF7ED957)),
-                            ),
-                          ),
-                          Text(
-                            "85%",
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.only(
-              left: 15,
-              top: 17.0,
+            SizedBox(height: 10),
+            // Input field for item description
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18.0),
+              ),
+              color: Color(0xFFFEFAED),
+              child: Padding(
+                padding:
+                    EdgeInsets.only(left: 20.0, top: 3, bottom: 3, right: 20.0),
+                child: TextFormField(
+                  controller: descriptionController,
+                  onChanged: (value) {
+                    setState(() {
+                      itemDescription = value;
+                    });
+                  },
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    hintText: ' ',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(height: 10),
+
+            // Input field for alert time
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18.0),
+              ),
+              color: Color(0xFFFEFAED),
+              child: ListTile(
+                title: Text('Alert Time'),
+                trailing: TextButton(
+                  onPressed: () async {
+                    final selectedTime = await showTimePicker(
+                      context: context,
+                      initialTime: alertTime ?? TimeOfDay.now(),
+                    );
+                    if (selectedTime != null) {
+                      setState(() {
+                        alertTime = selectedTime;
+                      });
+                    }
+                  },
+                  child: Text(
+                    alertTime != null
+                        ? '${alertTime!.hour.toString().padLeft(2, '0')}:${alertTime!.minute.toString().padLeft(2, '0')}'
+                        : 'Select Time',
+                    style: TextStyle(color: Colors.blue),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            // Input field for repeat options
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18.0),
+              ),
+              color: Color(0xFFFEFAED),
+              child: ListTile(
+                onTap: () {
+                  showRepeatOptionsDialog(context);
+                },
+                title: Text('Repeat'),
+                trailing: Text(
+                  selectedRepeatOption,
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            // Button to save the item
+            Row(
               children: [
-                Text(
-                  'In Progress',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      Container(
-                        child: Progress(
-                          location: 'Office',
-                          taskName: 'Take the laptop home',
-                          progress: 0.7,
-                        ),
-                      ),
-                      Container(
-                        child: Progress(
-                          location: 'Home',
-                          taskName: 'Water the plants',
-                          progress: 0.6,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.only(left: 10, top: 17.0, right: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  ' Edit Item Details',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-                ListView(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.fromLTRB(2.0, 10.0, 2.0, 10.0),
-                  children: <Widget>[
-                    Task(
-                      taskName: "Bring Laptop",
-                      location: "Office",
-                    ),
-                    Task(
-                      taskName: "House Key",
-                      location: "Home",
-                    ),
-                    Task(
-                      taskName: "Tax Documentation",
-                      location: "Office",
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 5),
-         /* Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 20, top: 0, right: 20),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => AddItemPage(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 20, top: 20, right: 20),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Update item in Firebase
+                        updateItemInFirebase();
+                        // Clear text fields and reset state
+                        nameController.clear();
+                        descriptionController.clear();
+                        setState(() {
+                          alertTime = null;
+                          repeatOptions.clear();
+                          selectedRepeatOption = 'Never';
+                        });
+                        // Navigate back to notification page
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
-                        fixedSize: Size(double.infinity, 50)),
-                    child: Text(
-                      'Add Item',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        'Edit Item',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-            ],
-          ),*/
-        ],
-      ),
-    );
-  }
-}
-
-class Task extends StatelessWidget {
-  Task({Key? key, required this.location, required this.taskName})
-      : super(key: key);
-
-  final String location;
-  final String taskName;
-
-  @override
-  Widget build(BuildContext context) {
-    final Map<String, MapEntry<IconData, Color>> taskIcons = {
-      'laptop': MapEntry(Icons.business_center, Color.fromARGB(255, 0, 0, 0)),
-      'key': MapEntry(Icons.vpn_key, Color.fromARGB(255, 0, 0, 0)),
-      'document': MapEntry(Icons.description, Color.fromARGB(255, 0, 0, 0)),
-      'water the plants': MapEntry(Icons.park, Color.fromARGB(255, 0, 0, 0)),
-      'water': MapEntry(Icons.water_drop, const Color.fromARGB(255, 0, 0, 0)),
-      'light': MapEntry(Icons.lightbulb, Color.fromARGB(255, 0, 0, 0)),
-      'lock': MapEntry(Icons.lock, const Color.fromARGB(255, 0, 0, 0)),
-      'gas': MapEntry(Icons.local_gas_station, Color.fromARGB(255, 0, 0, 0)),
-      'wallet': MapEntry(
-          Icons.account_balance_wallet, const Color.fromARGB(255, 0, 0, 0)),
-    };
-
-    MapEntry<String, MapEntry<IconData, Color>> taskEntry =
-        taskIcons.entries.firstWhere(
-      (entry) => taskName.toLowerCase().contains(entry.key),
-      orElse: () => MapEntry('', MapEntry(Icons.error, Colors.black)),
-    );
-
-    IconData icon = taskEntry.value.key;
-    Color iconColor = taskEntry.value.value;
-
-    return GestureDetector(
-      onTap: () {
-        // Navigate to the details page and pass necessary information
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TaskDetailsPage(
-              location: location,
-              taskName: taskName,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 5, horizontal: 0),
-        child: Card(
-          color: Color(0xFFFEFAED),
-          child: Container(
-            padding: const EdgeInsets.only(
-                left: 15, top: 0.0, bottom: 0.0, right: 10),
-            margin: EdgeInsets.symmetric(vertical: 10.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10.0),
-              color: const Color(0xFFF1F3E6),
-            ),
-            child: Row(
-              children: [
-                // First Column: Icon
-                Container(
-                  padding: EdgeInsets.all(8.0),
-                  margin: EdgeInsets.only(
-                      left: 0, top: 0.0, bottom: 0.0, right: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.0),
-                    color: const Color(0xFFE6E9D6),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                  ),
-                ),
-                // Second Column: Task Name and Location
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        taskName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          height: 1, // Set line height
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        location,
-                        style: TextStyle(
-                          color: const Color.fromARGB(255, 92, 92, 92),
-                          fontWeight: FontWeight.bold, // Set text to bold
-                          fontSize: 12, // Set font size to 10
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 10),
-                // Third Column: Circle to show progress
-                Expanded(
-                  flex: 1,
-                  child: Stack(
-                    alignment: Alignment.topRight,
-                    children: [
-                      Positioned(
-                        child: IconButton(
-                          icon: Icon(Icons.edit_note),
-                          onPressed: () {
-                            // Handle onPressed event
-                          },
-                          color: const Color.fromARGB(255, 24, 24, 24),
-                          iconSize: 30,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class TaskInfo {
-  final String location;
-  final List<Color> colors;
-
-  TaskInfo({required this.location, required this.colors});
-}
-
-List<TaskInfo> taskInfoList = [
-  TaskInfo(
-    location: 'Office',
-    colors: [
-      Color.fromARGB(255, 246, 150, 255),
-      Color.fromARGB(255, 21, 142, 255),
-    ],
-  ),
-  TaskInfo(
-    location: 'Home',
-    colors: [
-      Color.fromARGB(255, 253, 225, 100),
-      Color.fromARGB(255, 252, 92, 34),
-    ],
-  ),
-  TaskInfo(
-    location: 'School',
-    colors: [
-      Color.fromARGB(255, 130, 215, 255),
-      Color.fromARGB(255, 23, 207, 38),
-    ],
-  ),
-];
-
-class Progress extends StatelessWidget {
-  Progress(
-      {required this.location, required this.taskName, required this.progress});
-
-  final String location;
-  final String taskName;
-  final double progress;
-
-  Widget build(BuildContext context) {
-    final Map<String, MapEntry<IconData, Color>> taskIcons = {
-      'laptop': MapEntry(Icons.business_center, Color.fromARGB(255, 0, 0, 0)),
-      'key': MapEntry(Icons.vpn_key, Color.fromARGB(255, 0, 0, 0)),
-      'document': MapEntry(Icons.description, Color.fromARGB(255, 0, 0, 0)),
-      'water the plants': MapEntry(Icons.park, Color.fromARGB(255, 0, 0, 0)),
-      'water': MapEntry(Icons.water_drop, const Color.fromARGB(255, 0, 0, 0)),
-      'light': MapEntry(Icons.lightbulb, Color.fromARGB(255, 0, 0, 0)),
-      'lock': MapEntry(Icons.lock, const Color.fromARGB(255, 0, 0, 0)),
-      'gas':
-          MapEntry(Icons.local_gas_station, const Color.fromARGB(255, 0, 0, 0)),
-      'wallet': MapEntry(
-          Icons.account_balance_wallet, const Color.fromARGB(255, 0, 0, 0)),
-    };
-
-    MapEntry<String, MapEntry<IconData, Color>> taskEntry =
-        taskIcons.entries.firstWhere(
-      (entry) => taskName.toLowerCase().contains(entry.key),
-      orElse: () => MapEntry('', MapEntry(Icons.error, Colors.black)),
-    );
-
-    IconData icon = taskEntry.value.key;
-    Color iconColor = taskEntry.value.value;
-
-    TaskInfo taskInfo = taskInfoList.firstWhere(
-      (info) => info.location == location,
-      orElse: () => TaskInfo(location: '', colors: [Colors.grey]),
-    );
-
-    return Container(
-      height: 135,
-      width: 240,
-      margin: EdgeInsets.only(top: 9.0, bottom: 10.0, right: 10.0),
-      child: Card(
-        color: (taskInfo.colors.isNotEmpty ? taskInfo.colors[0] : Colors.grey),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding:
-              EdgeInsets.only(left: 20.0, top: 20.0, bottom: 15.0, right: 19.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    location,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 100, 100, 100),
-                      fontSize: 12,
-                    ),
-                  ),
-                  Icon(
-                    icon,
-                    color: iconColor,
-                  ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                taskName,
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    SizedBox(
-                      height: 7,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor:
-                              const Color.fromARGB(255, 255, 255, 255),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Color.fromARGB(255, 124, 124, 124)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

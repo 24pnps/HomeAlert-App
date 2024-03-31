@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "479136193765",
+    "project_id": "wirelessproject-e165f",
+    "storage_bucket": "wirelessproject-e165f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479136193765:android:6de080644ad46ca355c80c",
+        "android_client_info": {
+          "package_name": "com.example.homealert_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDcYZ0X7fNl5yiDLt7k_JU_7m90b6KMlyQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

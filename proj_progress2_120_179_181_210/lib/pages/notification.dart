@@ -5,8 +5,11 @@ import 'notification_edit.dart';
 
 class NotificationDemo extends StatefulWidget {
   final String username;
+  final String email; // Add email parameter
 
-  NotificationDemo({required this.username});
+  const NotificationDemo(
+      {Key? key, required this.username, required this.email})
+      : super(key: key);
 
   @override
   _NotificationDemoState createState() => _NotificationDemoState();
@@ -100,18 +103,35 @@ class _NotificationDemoState extends State<NotificationDemo> {
         List<IconData> icons = [];
         List<String> times = [];
         List<String?> alertTimes = [];
+        List<String> activeStatus = [];
+        List<String> userEmails = [];
+        List<String> repeatOptionsList = [];
+        List<String> documentIds = [];
 
         snapshot.data!.docs.forEach((document) {
           var data = document.data();
           String? itemName = data['itemName'];
           String? itemDescription = data['itemDescription'];
           String? alertTime = data['alertTime'];
+          String? active = data['active']; //
+          String? email = data['email']; //
+          List<String>? repeatOptions =
+              List<String>.from(data['repeatOptions'] ?? []); //
 
-          if (itemName != null && itemDescription != null) {
+          if (email == widget.email &&
+              itemName != null &&
+              itemDescription != null) {
             tasks.add(itemName);
             times.add(itemDescription);
             alertTimes.add(alertTime);
-
+            activeStatus.add(active ?? ''); // Added
+            userEmails.add(email ?? ''); // Added
+            if (repeatOptions == null || repeatOptions.isEmpty) {
+              repeatOptionsList.add('Never');
+            } else {
+              repeatOptionsList.add(repeatOptions.join(','));
+            }
+            documentIds.add(document.id);
             IconData iconData = mapItemNameToIcon(itemName);
             icons.add(iconData);
           }
@@ -290,17 +310,54 @@ class _NotificationDemoState extends State<NotificationDemo> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            Text(
-                                              tasks[i],
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            Text(
-                                              times[i],
-                                              style: TextStyle(
-                                                color: Color(0xFFDB36AD),
-                                              ),
+                                            Row(
+                                              children: <Widget>[
+                                                SizedBox(width: 8.0),
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: <Widget>[
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          tasks[i],
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 8.0),
+                                                        Icon(
+                                                          Icons.access_time,
+                                                          size:
+                                                              15, // Change the size to your desired value
+                                                        ),
+                                                        Text(
+                                                          " (" +
+                                                              (alertTimes[i] ??
+                                                                  'Default Time') +
+                                                              ")",
+                                                          style: TextStyle(
+                                                            color:
+                                                                Color.fromARGB(
+                                                                    228,
+                                                                    51,
+                                                                    51,
+                                                                    51),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Text(
+                                                      repeatOptionsList[i],
+                                                      style: TextStyle(
+                                                        color:
+                                                            Color(0xFFDB36AD),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -308,11 +365,26 @@ class _NotificationDemoState extends State<NotificationDemo> {
                                     ),
                                     Column(
                                       children: <Widget>[
-                                        Icon(Icons
-                                            .access_time_filled), // Timer icon added here
-                                        Text(
-                                          alertTimes[i] ?? 'Default Time',
-                                        ), // Text added below timer icon
+                                        Switch(
+                                          value: activeStatus[i] == 'on',
+                                          onChanged: (newValue) async {
+                                            setState(() {
+                                              activeStatus[i] =
+                                                  newValue ? 'on' : 'off';
+                                            });
+
+                                            // Update Firestore document
+                                            await FirebaseFirestore.instance
+                                                .collection('Item')
+                                                .doc(documentIds[
+                                                    i]) // Replace documentId with the actual document ID
+                                                .update({
+                                              'active': newValue ? 'on' : 'off'
+                                            });
+                                          },
+                                          activeColor: Colors
+                                              .green, // Change the color of the active switch
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -330,8 +402,9 @@ class _NotificationDemoState extends State<NotificationDemo> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                  AddItemPage(username: widget.username)),
+                              builder: (context) => AddItemPage(
+                                  username: widget.username,
+                                  email: widget.email)),
                         );
                       },
                       tooltip: 'Add Task',

@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => Login(),
         '/login': (context) => Login(),
         '/add_new_device': (context) => AddNewDevice(),
-        '/notification_add': (context) => AddItemPage(username: ""),
+        '/notification_add': (context) => AddItemPage(username: "",email: ""),
         '/signup': (context) => SignUp(),
         '/task': (context) => TaskPage(),
         '/launcher': (context) => Launcher(email: ""),

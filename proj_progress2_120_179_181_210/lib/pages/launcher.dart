@@ -53,8 +53,8 @@ void initState() {
   ];
 
   _fetchUserData().then((_) {
-    // After fetching user data, update NotificationDemo with username
-    _pages[1] = NotificationDemo(username: _username);
+    // After fetching user data, update NotificationDemo with username and email
+    _pages[1] = NotificationDemo(username: _username, email: widget.email);
     setState(() {}); // Update state to reflect changes
   });
 }

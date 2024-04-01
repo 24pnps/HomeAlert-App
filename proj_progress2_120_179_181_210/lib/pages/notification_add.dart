@@ -5,7 +5,10 @@ import 'notification.dart'; // Import the notification.dart file
 class AddItemPage extends StatefulWidget {
   final String username;
 
-  AddItemPage({required this.username, Key? key}) : super(key: key);
+  final String email; // Add email parameter
+
+  const AddItemPage({Key? key, required this.username, required this.email})
+      : super(key: key);
 
   @override
   _AddItemPageState createState() => _AddItemPageState();
@@ -21,7 +24,7 @@ class _AddItemPageState extends State<AddItemPage> {
   String selectedRepeatOption = 'Never';
 
   Future<void> saveItemToFirebase(String itemName, String itemDescription,
-      TimeOfDay? alertTime, List<String> repeatOptions) async {
+      TimeOfDay? alertTime, List<String> repeatOptions, String email) async {
     await FirebaseFirestore.instance.collection('Item').add({
       'itemName': itemName,
       'itemDescription': itemDescription,
@@ -29,6 +32,8 @@ class _AddItemPageState extends State<AddItemPage> {
           ? '${alertTime!.hour.toString().padLeft(2, '0')}:${alertTime!.minute.toString().padLeft(2, '0')}'
           : null,
       'repeatOptions': repeatOptions,
+      'active': 'on',
+      'email': email,
     });
   }
 
@@ -512,6 +517,12 @@ class _AddItemPageState extends State<AddItemPage> {
                   onChanged: (value) {
                     itemName = value;
                   },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter an item name';
+                    }
+                    return null;
+                  },
                   decoration: InputDecoration(
                     labelText: 'Item\'s name',
                     hintText: ' ',
@@ -635,7 +646,7 @@ class _AddItemPageState extends State<AddItemPage> {
                       onPressed: () {
                         // Save item to Firebase
                         saveItemToFirebase(itemName, itemDescription, alertTime,
-                            repeatOptions);
+                            repeatOptions, widget.email);
                         nameController.clear();
                         descriptionController.clear();
                         setState(() {

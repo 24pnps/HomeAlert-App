@@ -156,7 +156,7 @@ class _MainHomeState extends State<MainHome> {
             Container(
               margin: const EdgeInsets.only(top: 30),
               width: double.infinity,
-              height: 550,
+              height: 500,
               child: PageView.builder(
                 itemCount: items.length,
                 controller: pageController,
@@ -208,7 +208,7 @@ class RoomImage extends StatelessWidget {
             onChanged: (value) {},
           ),
           SmartDeviceBox(
-            smartDeviceName: "Bath tub",
+            smartDeviceName: "Tub",
             iconPath: "assets/icons/bathtub.png",
             powerOn: false,
             onChanged: (value) {},
@@ -218,19 +218,19 @@ class RoomImage extends StatelessWidget {
       case 'Bedroom':
         devices = [
           SmartDeviceBox(
-            smartDeviceName: "Air Conditioner",
+            smartDeviceName: "Air Con",
             iconPath: "assets/icons/air-conditioner.png",
             powerOn: false,
             onChanged: (value) {},
           ),
           SmartDeviceBox(
-            smartDeviceName: "Bedside Lamp",
+            smartDeviceName: "Lamp",
             iconPath: "assets/icons/BedsideLamp.png",
             powerOn: false,
             onChanged: (value) {},
           ),
           SmartDeviceBox(
-            smartDeviceName: "Alarm Clock",
+            smartDeviceName: "Clock",
             iconPath: "assets/icons/alarm.png",
             powerOn: false,
             onChanged: (value) {},
@@ -300,7 +300,7 @@ class RoomImage extends StatelessWidget {
             onChanged: (value) {},
           ),
           SmartDeviceBox(
-            smartDeviceName: "Washing Machine",
+            smartDeviceName: "Washer",
             iconPath: "assets/icons/washing.png",
             powerOn: false,
             onChanged: (value) {},
@@ -310,7 +310,7 @@ class RoomImage extends StatelessWidget {
       case 'Living':
         devices = [
           SmartDeviceBox(
-            smartDeviceName: "Television",
+            smartDeviceName: "TV",
             iconPath: "assets/icons/tv.png",
             powerOn: false,
             onChanged: (value) {},
@@ -352,8 +352,8 @@ class RoomImage extends StatelessWidget {
                 child: Row(
                   children: devices.map((device) {
                     return Container(
-                      // Wrap with Container to provide a size
-                      width: 200, // Set width to a non-zero value
+                      width: 200, // Fixed width
+                      height: 200, // Fixed height
                       child: device,
                     );
                   }).toList(),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'notification_add.dart';
 import 'notification_edit.dart';
 import 'map.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 
 class NotificationDemo extends StatefulWidget {
   final String username;
@@ -60,7 +62,6 @@ class _NotificationDemoState extends State<NotificationDemo> {
         return keywordsToIcons[keyword]!;
       }
     }
-
     // If no keyword matches, return a default icon
     return Icons.disabled_by_default;
   }
@@ -113,7 +114,6 @@ class _NotificationDemoState extends State<NotificationDemo> {
           List<String>? repeatOptions =
               List<String>.from(data['repeatOptions'] ?? []); //
 
-        
           if (email == widget.email &&
               itemName != null &&
               itemDescription != null) {
@@ -198,12 +198,57 @@ class _NotificationDemoState extends State<NotificationDemo> {
                       Positioned(
                         top: 230,
                         left: 80,
-                        child: Text(
-                          'Home',
-                          style: GoogleFonts.poppins(
-                              fontSize: 25,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold),
+                        child: FutureBuilder<User?>(
+                          future:
+                              FirebaseAuth.instance.authStateChanges().first,
+                          builder: (BuildContext context,
+                              AsyncSnapshot<User?> snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return CircularProgressIndicator();
+                            }
+                            if (snapshot.hasError) {
+                              return Text('Error: ${snapshot.error}');
+                            }
+                            if (!snapshot.hasData || snapshot.data == null) {
+                              return Text('User not logged in');
+                            }
+                            final user = snapshot.data!;
+                            return FutureBuilder<DocumentSnapshot>(
+                              future: FirebaseFirestore.instance
+                                  .collection('User')
+                                  .doc(user.uid)
+                                  .get(),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<DocumentSnapshot> snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return CircularProgressIndicator();
+                                }
+                                if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                }
+                                if (!snapshot.hasData ||
+                                    snapshot.data == null) {
+                                  return Text('Location not available');
+                                }
+                                final location = snapshot.data!['location'];
+                                if (location == null) {
+                                  return Text('Location not available');
+                                }
+                                final lat = location.latitude;
+                                final lng = location.longitude;
+                                return Text(
+                                  'Home (${lat.toStringAsFixed(2)}, ${lng.toStringAsFixed(2)})',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 25,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
                       Positioned(
